@@ -64,7 +64,7 @@ class STFT(torch.nn.Module):
 
         forward_transform = F.conv1d(
             input_data.cuda(),
-            Variable(self.forward_basis, requires_grad=False).cuda(),
+            Variable(self.forward_basis, requires_grad=True).cuda(),
             stride=self.hop_length,
             padding=0).cpu()
 
@@ -84,7 +84,7 @@ class STFT(torch.nn.Module):
 
         inverse_transform = F.conv_transpose1d(
             recombine_magnitude_phase,
-            Variable(self.inverse_basis, requires_grad=False),
+            Variable(self.inverse_basis, requires_grad=True),
             stride=self.hop_length,
             padding=0)
 
@@ -97,7 +97,7 @@ class STFT(torch.nn.Module):
             approx_nonzero_indices = torch.from_numpy(
                 np.where(window_sum > tiny(window_sum))[0])
             window_sum = torch.autograd.Variable(
-                torch.from_numpy(window_sum), requires_grad=False)
+                torch.from_numpy(window_sum), requires_grad=True)
             window_sum = window_sum.cuda() if magnitude.is_cuda else window_sum
             inverse_transform[:, :,
                               approx_nonzero_indices] /= window_sum[approx_nonzero_indices]

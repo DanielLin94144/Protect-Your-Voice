@@ -12,7 +12,9 @@ from models.StyleSpeech import StyleSpeech
 from text import text_to_sequence
 import audio as Audio
 import utils
+import soundfile as sf
 
+import sys
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -79,13 +81,21 @@ def synthesize(args, model, _stft):
 
     # Extract style vector
     style_vector = model.get_style_vector(ref_mel)
-
+    print(ref_mel.shape)
     # Forward
     mel_output = model.inference(style_vector, src, src_len)[0]
-    
     mel_ref_ = ref_mel.cpu().squeeze().transpose(0, 1).detach()
     mel_ = mel_output.cpu().squeeze().transpose(0, 1).detach()
+    
+    print(mel_.shape)
+    # vocoder
+    # vocoder = torch.hub.load('descriptinc/melgan-neurips', 'load_melgan')  
+    from melgan_neurips.mel2wav.interface import MelVocoder
+    vocoder = MelVocoder(path='/home/daniel094144/Daniel/StyleSpeech/melgan_neurips/pretrained/')
+    out_wav = vocoder.inverse(mel_.unsqueeze(0))  # audio (torch.tensor) -> (batch_size, 80, timesteps)
 
+    print(out_wav.shape)
+    sf.write('./results/synthesized.wav', out_wav.transpose(0, 1).cpu().numpy(), 16000)
     # plotting
     utils.plot_data([mel_ref_.numpy(), mel_.numpy()], 
         ['Ref Spectrogram', 'Synthesized Spectrogram'], filename=os.path.join(save_path, 'plot.png'))
