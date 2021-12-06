@@ -114,13 +114,7 @@ def attack_emb(model, ori_mel, adv_mel):
     loss = torch.nn.L1Loss()
     return -loss(ori_w, adv_w)
 
-<<<<<<< HEAD
-def synthesize(args, model, _stft):   
-=======
-from tqdm import trange
-
 def synthesize(args, model, _stft):
->>>>>>> 9cf2e70b1766c326555b4d432a634f637813cc76
     # hyperparameters
     learning_rate = 0.1
     iter = 500
