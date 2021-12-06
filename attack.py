@@ -116,9 +116,9 @@ def attack_emb(model, ori_mel, adv_mel):
 
 def synthesize(args, model, _stft):
     # hyperparameters
-    learning_rate = 0.1
-    iter = 500
-    eps = 0.002
+    learning_rate = 0.001
+    iter = 15
+    eps = 0.003
     wav = preprocess_audio(args.ref_audio)
     src = preprocess_english(args.text, args.lexicon_path).unsqueeze(0)
     src_len = torch.from_numpy(np.array([src.shape[1]])).to(device=device)
@@ -127,23 +127,22 @@ def synthesize(args, model, _stft):
     wav = wav.detach()
     # attack
     delta = Variable(torch.zeros(wav.size()).type(torch.FloatTensor), requires_grad=True)
-    optimizer = torch.optim.Adam(params=[delta], lr=learning_rate)
+    optimizer = torch.optim.SGD(params=[delta], lr=learning_rate, momentum=1)
     ori_mel = wav2mel(wav).transpose(2, 1).to(device=device).detach()
 
     # iterative attack
     for _ in trange(iter):
         optimizer.zero_grad()
-        adv_wav = wav + eps * delta.tanh()
+        _delta = torch.clamp(delta, -eps, eps)
+        adv_wav = wav + _delta
         adv_mel = wav2mel(adv_wav)
 
         adv_mel = adv_mel.to(device=device).transpose(2, 1)
         loss = attack_emb(model, ori_mel, adv_mel)
         print('[INFO]  loss = ', loss.item())
         loss.backward(retain_graph=True)
-
-        # clip grad
-        clip_value = 1e-3
-        clip_grad_value_(delta, clip_value)
+        delta.grad = torch.sign(delta.grad)
+ 
         optimizer.step()
 
     # baseline: random noise
@@ -151,7 +150,8 @@ def synthesize(args, model, _stft):
     base_mel = wav2mel(base_wav)
     base_mel = base_mel.to(device=device).transpose(2, 1)
     # use final delta perturbation to create adv wav
-    adv_wav = wav + eps * delta.detach().tanh()
+    delta = torch.clamp(delta, -eps, eps)
+    adv_wav = wav + delta.detach()
     adv_mel = wav2mel(adv_wav)
     adv_mel = adv_mel.to(device=device).transpose(2, 1)
     # extact style vector
