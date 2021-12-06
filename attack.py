@@ -110,15 +110,16 @@ attack method
 def attack_emb(model, ori_mel, adv_mel):
     ori_w = model.get_style_vector(ori_mel + torch.normal(0.0, 0.0001, size=ori_mel.size()).to(device))
     adv_w = model.get_style_vector(adv_mel)
-    # loss = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
-    loss = torch.nn.L1Loss()
-    return -loss(ori_w, adv_w)
+    loss = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
+    # loss = torch.nn.L1Loss()
+    # loss = torch.nn.MSELoss()
+    return loss(ori_w, adv_w)
 
 def synthesize(args, model, _stft):
     # hyperparameters
     learning_rate = 0.001
-    iter = 15
-    eps = 0.003
+    iter = 20
+    eps = 0.005
     wav = preprocess_audio(args.ref_audio)
     src = preprocess_english(args.text, args.lexicon_path).unsqueeze(0)
     src_len = torch.from_numpy(np.array([src.shape[1]])).to(device=device)

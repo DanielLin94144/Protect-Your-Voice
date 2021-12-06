@@ -129,16 +129,17 @@ def attack_emb(model, ori_mel, adv_mel):
     ori_w = model(ori_mel.to(device) + torch.normal(0.0, 0.0001, size=ori_mel.size()).to(device))
     adv_w = model(adv_mel.to(device))
 
-    loss = torch.nn.L1Loss()
-    return -loss(ori_w, adv_w)
+    # loss = torch.nn.L1Loss()
+    loss = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
+    return loss(ori_w, adv_w)
 
 if __name__ == '__main__': 
     audio_path = './audio/1463_infer.wav'
     sampling_rate = 16000
     audio_norm_target_dBFS = -30
-    learning_rate = 0.01
-    iter = 1000
-    eps = 0.003
+    learning_rate = 0.001
+    iter = 20
+    eps = 0.005
 
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -147,7 +148,7 @@ if __name__ == '__main__':
     ori_wav = load_audio(audio_path, sampling_rate).detach()
     # attack
     delta = Variable(torch.zeros(ori_wav.size()).type(torch.FloatTensor), requires_grad=True)
-    optimizer = torch.optim.Adam(params=[delta], lr=learning_rate)
+    optimizer = torch.optim.SGD(params=[delta], lr=learning_rate, momentum=1)
     
     wav = normalize_volume(ori_wav, audio_norm_target_dBFS, increase_only=True)
     ori_mel = wav_to_mel_spectrogram(wav).detach().unsqueeze(0)
@@ -156,7 +157,9 @@ if __name__ == '__main__':
      # iterative attack 
     for _ in trange(iter):
         optimizer.zero_grad()
-        adv_wav = ori_wav + eps * delta.tanh()
+        _delta = torch.clamp(delta, -eps, eps)
+        adv_wav = wav + _delta
+        # adv_wav = ori_wav + eps * delta.tanh()
 
         adv_wav = normalize_volume(adv_wav, audio_norm_target_dBFS, increase_only=True)
         adv_mel = wav_to_mel_spectrogram(adv_wav).unsqueeze(0)
@@ -164,10 +167,13 @@ if __name__ == '__main__':
         loss = attack_emb(model, ori_mel, adv_mel)
         print('[INFO]  loss = ', loss.item())
         loss.backward(retain_graph=True) 
+        delta.grad = torch.sign(delta.grad)
         optimizer.step()
 
     # use final delta perturbation to create adv wav
-    adv_wav = ori_wav + eps * delta.detach().tanh()
+    # adv_wav = ori_wav + eps * delta.detach().tanh()
+    delta = torch.clamp(delta, -eps, eps)
+    adv_wav = wav + delta.detach()
     # save file
     save_path = './dvector_results'
     if not os.path.exists(save_path):
