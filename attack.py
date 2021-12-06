@@ -13,6 +13,12 @@ from text import text_to_sequence
 import audio as Audio
 import utils
 import soundfile as sf
+from torch.autograd import Variable
+import torch.nn
+
+import torch.nn.functional as F
+from librosa.filters import mel as librosa_mel_fn
+from tqdm import trange
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -63,12 +69,6 @@ def get_StyleSpeech(config, checkpoint_path):
     model.eval()
     return model
 
-from torch.autograd import Variable
-import torch.nn
-
-import torch.nn.functional as F
-from librosa.filters import mel as librosa_mel_fn
-
 def wav2mel(audio):
     n_fft=1024
     hop_length=256
@@ -111,8 +111,6 @@ def attack_emb(model, ori_mel, adv_mel):
     # loss = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
     loss = torch.nn.L1Loss()
     return -loss(ori_w, adv_w)
-
-from tqdm import trange
 
 def synthesize(args, model, _stft):   
     # hyperparameters

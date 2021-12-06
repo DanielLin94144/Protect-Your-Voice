@@ -1,3 +1,3 @@
-python synthesize.py --text "if i presume to begin,' said blenkiron, it's because i reckon my story is the shortest." --ref_audio  audio/1463_infer.wav --checkpoint_path pretrained_model/meta_stylespeech.pth.tar
+python synthesize.py --text "if i presume to begin,' said blenkiron, it's because i reckon my story is the shortest." --ref_audio  dvector_results/ori_with_adv.wav --checkpoint_path pretrained_model/meta_stylespeech.pth.tar
 # python synthesize.py --text "the standard of measurement these days is the ability to serve." --ref_audio  audio/6492_infer.wav --checkpoint_path pretrained_model/meta_stylespeech.pth.tar
 # python synthesize.py --text "i have the first six months of next season to prove myself." --ref_audio  audio/p237_gt.wav --checkpoint_path pretrained_model/meta_stylespeech.pth.tar

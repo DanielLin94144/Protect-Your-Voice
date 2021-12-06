@@ -3,6 +3,11 @@ import torch
 from torch import nn
 import librosa
 import torchaudio
+from torch.autograd import Variable
+import torch.nn
+from tqdm import trange
+import os 
+import soundfile as sf
 
 class SpeakerEncoder(nn.Module):
     def __init__(self, device, loss_device, model_hidden_size = 256,
@@ -66,7 +71,7 @@ def load_model(weights_fpath='./real_time_encoder/pretrained.pt', device=None):
     model = SpeakerEncoder(device, torch.device("cpu"))
     checkpoint = torch.load(weights_fpath, device)
     model.load_state_dict(checkpoint["model_state"])
-    model.eval()
+    # model.eval()
     print("Loaded encoder \"%s\" trained to step %d" % (weights_fpath, checkpoint["step"]))
     
     return model.to(device)
@@ -119,26 +124,52 @@ def normalize_volume(wav, target_dBFS, increase_only=False, decrease_only=False)
         return wav
     return wav * (10 ** (dBFS_change / 20))
 
+def attack_emb(model, ori_mel, adv_mel):
+
+    ori_w = model(ori_mel.to(device) + torch.normal(0.0, 0.0001, size=ori_mel.size()).to(device))
+    adv_w = model(adv_mel.to(device))
+
+    loss = torch.nn.L1Loss()
+    return -loss(ori_w, adv_w)
 
 if __name__ == '__main__': 
     audio_path = './audio/1463_infer.wav'
     sampling_rate = 16000
     audio_norm_target_dBFS = -30
-    
+    learning_rate = 0.01
+    iter = 1000
+    eps = 0.003
+
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = load_model().to(device)
 
-    wav = load_audio(audio_path, sampling_rate)
-    # attack here
-    wav = normalize_volume(wav, audio_norm_target_dBFS, increase_only=True)
-    mel = wav_to_mel_spectrogram(wav)
-    print("Loaded file succesfully")
+    ori_wav = load_audio(audio_path, sampling_rate).detach()
+    # attack
+    delta = Variable(torch.zeros(ori_wav.size()).type(torch.FloatTensor), requires_grad=True)
+    optimizer = torch.optim.Adam(params=[delta], lr=learning_rate)
     
-    # Then we derive the embedding. There are many functions and parameters that the 
-    # speaker encoder interfaces. These are mostly for in-depth research. You will typically
-    # only use this function (with its default parameters):
-    # embed = embed_utterance(preprocessed_wav)
+    wav = normalize_volume(ori_wav, audio_norm_target_dBFS, increase_only=True)
+    ori_mel = wav_to_mel_spectrogram(wav).detach().unsqueeze(0)
+    print("Loaded file succesfully")
 
-    emb = model(mel.unsqueeze(0).to(device))
-    print(emb.shape)
-    print("Created the embedding")
+     # iterative attack 
+    for _ in trange(iter):
+        optimizer.zero_grad()
+        adv_wav = ori_wav + eps * delta.tanh()
+
+        adv_wav = normalize_volume(adv_wav, audio_norm_target_dBFS, increase_only=True)
+        adv_mel = wav_to_mel_spectrogram(adv_wav).unsqueeze(0)
+
+        loss = attack_emb(model, ori_mel, adv_mel)
+        print('[INFO]  loss = ', loss.item())
+        loss.backward(retain_graph=True) 
+        optimizer.step()
+
+    # use final delta perturbation to create adv wav
+    adv_wav = ori_wav + eps * delta.detach().tanh()
+    # save file
+    save_path = './dvector_results'
+    if not os.path.exists(save_path):
+        os.makedirs(save_path, exist_ok=True)
+    sf.write(os.path.join(save_path, 'ori_with_adv.wav'), adv_wav.cpu().numpy(), 16000)
