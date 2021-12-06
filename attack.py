@@ -119,7 +119,7 @@ from tqdm import trange
 def synthesize(args, model, _stft):
     # hyperparameters
     learning_rate = 0.1
-    iter = 1000
+    iter = 500
     eps = 0.002
     wav = preprocess_audio(args.ref_audio)
     src = preprocess_english(args.text, args.lexicon_path).unsqueeze(0)
