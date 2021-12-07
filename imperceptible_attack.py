@@ -291,7 +291,7 @@ def synthesize(args, model, _stft):
     learning_rate1 = 0.001
     learning_rate2 = 5e-4
     first_iter = 20
-    second_iter = 500
+    second_iter = 700
     eps = 0.01
     alpha = 0.02
 
@@ -327,7 +327,7 @@ def synthesize(args, model, _stft):
     delta_2 = Variable(delta, requires_grad=True)
     
     optimizer2 = torch.optim.Adam(params=[delta_2], lr=learning_rate2)
-    for _ in trange(second_iter):
+    for i in trange(second_iter):
         optimizer2.zero_grad()
         _delta = delta_2  # no clamping: only bounded by psd mask
         adv_wav = wav + _delta
@@ -336,9 +336,9 @@ def synthesize(args, model, _stft):
         adv_mel = adv_mel.to(device=device).transpose(2, 1)
         attack_loss = attack_emb(model, ori_mel, adv_mel)
         imperceptible_loss = imp_attack.imperceptible_loss(_delta, wav.squeeze(0).squeeze(0).cpu().numpy())
-        if attack_loss < 0.5: 
+        if i % 2 == 0 and attack_loss < 0.4: 
             alpha = alpha * 1.2
-        elif attack_loss > 0.5: 
+        elif i % 3 == 0 and attack_loss > 0.4: 
             alpha = alpha * 0.8
 
         print(attack_loss)
