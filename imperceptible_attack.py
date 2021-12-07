@@ -291,11 +291,9 @@ def synthesize(args, model, _stft):
     learning_rate1 = 0.001
     learning_rate2 = 5e-4
     first_iter = 20
-    second_iter = 2000
-    eps = 0.005
+    second_iter = 500
+    eps = 0.01
     alpha = 0.02
-    max_alpha = 1.2
-    
 
     wav = preprocess_audio(args.ref_audio)
     src = preprocess_english(args.text, args.lexicon_path).unsqueeze(0)
@@ -329,7 +327,7 @@ def synthesize(args, model, _stft):
     delta_2 = Variable(delta, requires_grad=True)
     
     optimizer2 = torch.optim.Adam(params=[delta_2], lr=learning_rate2)
-    for step in trange(second_iter):
+    for _ in trange(second_iter):
         optimizer2.zero_grad()
         _delta = delta_2  # no clamping: only bounded by psd mask
         adv_wav = wav + _delta
@@ -338,12 +336,20 @@ def synthesize(args, model, _stft):
         adv_mel = adv_mel.to(device=device).transpose(2, 1)
         attack_loss = attack_emb(model, ori_mel, adv_mel)
         imperceptible_loss = imp_attack.imperceptible_loss(_delta, wav.squeeze(0).squeeze(0).cpu().numpy())
+        if attack_loss < 0.5: 
+            alpha = alpha * 1.2
+        elif attack_loss > 0.5: 
+            alpha = alpha * 0.8
+
         print(attack_loss)
         print(imperceptible_loss)
-        loss = attack_loss + (alpha + (max_alpha - alpha) / second_iter * (step+1)) * imperceptible_loss
+        loss = attack_loss + alpha * imperceptible_loss
         print('[INFO]  loss = ', loss.item())
         loss.backward(retain_graph=True)
- 
+        # clip grad
+        clip_value = 1.0
+        clip_grad_value_(delta_2, clip_value)
+
         optimizer2.step()
 
     # baseline: random noise
