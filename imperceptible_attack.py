@@ -291,7 +291,7 @@ def synthesize(args, model, _stft):
     learning_rate1 = 0.001
     learning_rate2 = 5e-4
     first_iter = 20
-    second_iter = 700
+    second_iter = 500
     eps = 0.01
     alpha = 0.02
 
@@ -336,9 +336,9 @@ def synthesize(args, model, _stft):
         adv_mel = adv_mel.to(device=device).transpose(2, 1)
         attack_loss = attack_emb(model, ori_mel, adv_mel)
         imperceptible_loss = imp_attack.imperceptible_loss(_delta, wav.squeeze(0).squeeze(0).cpu().numpy())
-        if i % 2 == 0 and attack_loss < 0.4: 
+        if attack_loss < 0.4: 
             alpha = alpha * 1.2
-        elif i % 3 == 0 and attack_loss > 0.4: 
+        elif attack_loss > 0.4: 
             alpha = alpha * 0.8
 
         print(attack_loss)
