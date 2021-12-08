@@ -21,6 +21,7 @@ from librosa.filters import mel as librosa_mel_fn
 from tqdm import trange
 
 from torch.nn.utils import clip_grad_value_
+from attack_utils import attack_emb
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -104,16 +105,7 @@ def wav2mel(audio):
     return log_mel_spec
 
 
-'''
-attack method
-'''
-def attack_emb(model, ori_mel, adv_mel):
-    ori_w = model.get_style_vector(ori_mel + torch.normal(0.0, 0.0001, size=ori_mel.size()).to(device))
-    adv_w = model.get_style_vector(adv_mel)
-    loss = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
-    # loss = torch.nn.L1Loss()
-    # loss = torch.nn.MSELoss()
-    return loss(ori_w, adv_w)
+
 
 def synthesize(args, model, _stft):
     # hyperparameters

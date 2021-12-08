@@ -8,6 +8,7 @@ import torch.nn
 from tqdm import trange
 import os 
 import soundfile as sf
+from attack_utils import attack_dvector_emb
 
 class SpeakerEncoder(nn.Module):
     def __init__(self, device, loss_device, model_hidden_size = 256,
@@ -92,14 +93,6 @@ def wav_to_mel_spectrogram(wav, sampling_rate=16000, mel_window_length=25, mel_w
     Derives a mel spectrogram ready to be used by the encoder from a preprocessed audio waveform.
     Note: this not a log-mel spectrogram.
     """
-    # frames = librosa.feature.melspectrogram(
-    #     wav,
-    #     sampling_rate,
-    #     n_fft=int(sampling_rate * mel_window_length / 1000),
-    #     hop_length=int(sampling_rate * mel_window_step / 1000),
-    #     n_mels=mel_n_channels
-    # )
-
     frames = torchaudio.transforms.MelSpectrogram(
         sample_rate=sampling_rate,
         n_fft=int(sampling_rate * mel_window_length / 1000),
@@ -124,14 +117,6 @@ def normalize_volume(wav, target_dBFS, increase_only=False, decrease_only=False)
         return wav
     return wav * (10 ** (dBFS_change / 20))
 
-def attack_emb(model, ori_mel, adv_mel):
-
-    ori_w = model(ori_mel.to(device) + torch.normal(0.0, 0.0001, size=ori_mel.size()).to(device))
-    adv_w = model(adv_mel.to(device))
-
-    # loss = torch.nn.L1Loss()
-    loss = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
-    return loss(ori_w, adv_w)
 
 if __name__ == '__main__': 
     audio_path = './audio/1463_infer.wav'
@@ -154,17 +139,16 @@ if __name__ == '__main__':
     ori_mel = wav_to_mel_spectrogram(wav).detach().unsqueeze(0)
     print("Loaded file succesfully")
 
-     # iterative attack 
+    # iterative attack 
     for _ in trange(iter):
         optimizer.zero_grad()
         _delta = torch.clamp(delta, -eps, eps)
         adv_wav = wav + _delta
-        # adv_wav = ori_wav + eps * delta.tanh()
 
         adv_wav = normalize_volume(adv_wav, audio_norm_target_dBFS, increase_only=True)
         adv_mel = wav_to_mel_spectrogram(adv_wav).unsqueeze(0)
 
-        loss = attack_emb(model, ori_mel, adv_mel)
+        loss = attack_dvector_emb(model, ori_mel, adv_mel)
         print('[INFO]  loss = ', loss.item())
         loss.backward(retain_graph=True) 
         delta.grad = torch.sign(delta.grad)
