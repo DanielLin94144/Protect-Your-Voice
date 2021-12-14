@@ -139,17 +139,17 @@ def synthesize(args, model, _stft):
         print('[INFO]  loss = ', loss.item())
         loss.backward(retain_graph=True)
         delta.grad = torch.sign(delta.grad)
- 
+
         optimizer1.step()
-    
-    
+
+
     # 2nd stage
     delta_2 = Variable(delta, requires_grad=True)
-    
+
     optimizer2 = torch.optim.Adam(params=[delta_2], lr=learning_rate2)
     for i in trange(second_iter):
         optimizer2.zero_grad()
-        if torch.isnan(torch.sum(delta_2)): 
+        if torch.isnan(torch.sum(delta_2)):
             # delta_2 = _delta # save the last non-nan delta
             break
         _delta = delta_2.clone().detach()
@@ -160,16 +160,16 @@ def synthesize(args, model, _stft):
         adv_mel = adv_mel.to(device=device).transpose(2, 1)
         attack_loss = attack_emb(model, ori_mel, adv_mel)
         imperceptible_loss = imp_attack.imperceptible_loss(delta_2, wav.squeeze(0).squeeze(0).cpu().numpy())
-        if i % 2 and attack_loss < 0.2: 
+        if i % 2 and attack_loss < 0.2:
             alpha = alpha * 1.2
-        elif i % 3 and attack_loss > 0.2: 
+        elif i % 3 and attack_loss > 0.2:
             alpha = alpha * 0.8
 
         print(attack_loss)
         print(imperceptible_loss)
         loss = attack_loss + alpha * imperceptible_loss
         print('[INFO]  loss = ', loss.item())
-        
+
         loss.backward(retain_graph=True)
         # clip grad
         clip_value = 1.0
@@ -200,8 +200,7 @@ def synthesize(args, model, _stft):
 
     # vocoder
     from melgan_neurips.mel2wav.interface import MelVocoder
-    # vocoder = MelVocoder(path='./melgan_neurips/pretrained/')
-    vocoder = MelVocoder(path='/home/daniel094144/Daniel/StyleSpeech/melgan_neurips/pretrained/')
+    vocoder = MelVocoder(path='./melgan_neurips/pretrained/')
     out_wav_ori = vocoder.inverse(result_mel_ori.unsqueeze(0))
     out_wav_adv = vocoder.inverse(result_mel_adv.unsqueeze(0))
     out_wav_base = vocoder.inverse(result_mel_base.unsqueeze(0))

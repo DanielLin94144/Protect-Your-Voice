@@ -69,12 +69,12 @@ def get_StyleSpeech(config, checkpoint_path):
     return model
 
 
-def synthesize(args, model, _stft):   
+def synthesize(args, model, _stft):
     # preprocess audio and text
     ref_mel = preprocess_audio(args.ref_audio, _stft).transpose(0,1).unsqueeze(0)
     src = preprocess_english(args.text, args.lexicon_path).unsqueeze(0)
     src_len = torch.from_numpy(np.array([src.shape[1]])).to(device=device)
-    
+
     save_path = args.save_path
     if not os.path.exists(save_path):
         os.makedirs(save_path, exist_ok=True)
@@ -86,25 +86,25 @@ def synthesize(args, model, _stft):
     mel_output = model.inference(style_vector, src, src_len)[0]
     mel_ref_ = ref_mel.cpu().squeeze().transpose(0, 1).detach()
     mel_ = mel_output.cpu().squeeze().transpose(0, 1).detach()
-    
+
     print(mel_.shape)
     # vocoder
-    # vocoder = torch.hub.load('descriptinc/melgan-neurips', 'load_melgan')  
+    # vocoder = torch.hub.load('descriptinc/melgan-neurips', 'load_melgan')
     from melgan_neurips.mel2wav.interface import MelVocoder
-    vocoder = MelVocoder(path='/home/daniel094144/Daniel/StyleSpeech/melgan_neurips/pretrained/')
+    vocoder = MelVocoder(path='./melgan_neurips/pretrained/')
     out_wav = vocoder.inverse(mel_.unsqueeze(0))  # audio (torch.tensor) -> (batch_size, 80, timesteps)
 
     print(out_wav.shape)
     sf.write('./results/synthesized.wav', out_wav.transpose(0, 1).cpu().numpy(), 16000)
     # plotting
-    utils.plot_data([mel_ref_.numpy(), mel_.numpy()], 
+    utils.plot_data([mel_ref_.numpy(), mel_.numpy()],
         ['Ref Spectrogram', 'Synthesized Spectrogram'], filename=os.path.join(save_path, 'plot.png'))
     print('Generate done!')
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--checkpoint_path", type=str, required=True, 
+    parser.add_argument("--checkpoint_path", type=str, required=True,
         help="Path to the pretrained model")
     parser.add_argument('--config', default='configs/config.json')
     parser.add_argument("--save_path", type=str, default='results/')
@@ -114,7 +114,7 @@ if __name__ == "__main__":
         help="raw text to synthesize")
     parser.add_argument("--lexicon_path", type=str, default='lexicon/librispeech-lexicon.txt')
     args = parser.parse_args()
-    
+
     with open(args.config) as f:
         data = f.read()
     json_config = json.loads(data)
