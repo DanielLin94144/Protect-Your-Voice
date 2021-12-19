@@ -6,6 +6,7 @@ import librosa
 
 import torch
 from s3prl.hub import mos_wav2vec2
+# from s3prl.hub import mos_tera
 
 
 def main(audio_dir):

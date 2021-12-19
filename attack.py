@@ -135,7 +135,7 @@ def synthesize(args, model, _stft):
         print('[INFO]  loss = ', loss.item())
         loss.backward(retain_graph=True)
         delta.grad = torch.sign(delta.grad)
- 
+
         optimizer.step()
 
     # baseline: random noise
@@ -161,8 +161,7 @@ def synthesize(args, model, _stft):
 
     # vocoder
     from melgan_neurips.mel2wav.interface import MelVocoder
-    # vocoder = MelVocoder(path='./melgan_neurips/pretrained/')
-    vocoder = MelVocoder(path='/home/daniel094144/Daniel/StyleSpeech/melgan_neurips/pretrained/')
+    vocoder = MelVocoder(path='./melgan_neurips/pretrained/')
     out_wav_ori = vocoder.inverse(result_mel_ori.unsqueeze(0))
     out_wav_adv = vocoder.inverse(result_mel_adv.unsqueeze(0))
     out_wav_base = vocoder.inverse(result_mel_base.unsqueeze(0))

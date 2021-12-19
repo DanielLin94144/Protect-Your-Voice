@@ -1,12 +1,15 @@
-python==3.7.10
-pytorch==1.8.1
-scipy==1.4.1
-numpy==1.19.4
-librosa==0.8.1
-pyword==0.2.11
-joblib==0.14.1
-
-
-
-
+torch
+torchaudio
+scipy
+numpy
+librosa
+pyword
+joblib
+g2p_en
+unidecode
+resemblyzer
+matplotlib
+umap-learn
+s3prl
+fairseq@git+https://github.com//pytorch/fairseq.git@f2146bdc7abf293186de9449bfa2272775e39e1d#egg=fairseq
 
