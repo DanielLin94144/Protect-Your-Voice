@@ -5,6 +5,7 @@ import argparse
 import librosa
 import re
 import json
+import random
 from string import punctuation
 from g2p_en import G2p
 
@@ -110,18 +111,34 @@ def wav2mel(audio):
 
 
 class AudioDataset(Dataset):
-    def __init__(self, args):
-        pass
+    def __init__(self, data_root='/hdd0/CORPORA/VCTK-Corpus-0.92'):
+        self.wav_dir = os.path.join(data_root, 'wav48_silence_trimmed')
+        self.txt_dir = os.path.join(data_root, 'txt')
+
+        remove_tags = ['p280', 'p362']
+        self.speaker_list = sorted(os.listdir(self.txt_dir))
+        self.speaker_list = [e for e in self.speaker_list if e not in remove_tags]
 
     def __getitem__(self, idx):
         '''
         Returns:
             tuple: ``(target_audio, target_text, gt_audio)``
         '''
-        pass
+        speaker = self.speaker_list[idx]
+
+        idx_list = [e.split('.')[0].split('_')[1] for e in sorted(os.listdir(os.path.join(self.txt_dir, speaker)))]
+        idx_01, idx_02 = random.sample(idx_list, 2)
+
+        target_audio = os.path.join(self.wav_dir, speaker, f'{speaker}_{idx_01}_mic2.flac')
+        gt_audio = os.path.join(self.wav_dir, speaker, f'{speaker}_{idx_02}_mic2.flac')
+
+        with open(os.path.join(self.txt_dir, speaker, f'{speaker}_{idx_02}.txt')) as f:
+            target_text = f.read()
+
+        return target_audio, target_text, gt_audio
 
     def __len__(self):
-        pass
+        return len(self.speaker_list)
 
 
 class DummyDataset(Dataset):
@@ -217,8 +234,8 @@ def synthesize(args, model, vocoder, _stft, target_audio, target_text):
 
 
 def synthesize_all(args, model, vocoder, _stft):
-    # audio_dataset = AudioDataset(args)
-    audio_dataset = DummyDataset(args)
+    audio_dataset = AudioDataset()
+    # audio_dataset = DummyDataset(args)
 
     for batch in tqdm(audio_dataset, desc='Generating audios'):
         target_audio = batch[0]
