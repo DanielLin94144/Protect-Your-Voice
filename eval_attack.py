@@ -226,6 +226,7 @@ def synthesize(args, model, vocoder, _stft, target_audio, target_text):
     # save file
     filename = os.path.basename(target_audio)
 
+    write_wav(os.path.join(args.save_dir, '00_ori',              filename), wav.squeeze(0))
     write_wav(os.path.join(args.save_dir, '01_ori_with_adv',     filename), adv_wav.squeeze(0))
     write_wav(os.path.join(args.save_dir, '02_ori_with_base',    filename), base_wav.squeeze(0))
     write_wav(os.path.join(args.save_dir, '03_synthesized_ori',  filename), out_wav_ori)
@@ -253,6 +254,7 @@ def get_args():
 
     parser.add_argument("--lexicon_path",    type=str, default='lexicon/librispeech-lexicon.txt')
     parser.add_argument("--vocoder_path",    type=str, default='melgan_neurips/pretrained')
+    parser.add_argument("--seed",            type=int, default=0)
 
     args = parser.parse_args()
     return args
@@ -260,6 +262,7 @@ def get_args():
 
 def main():
     args = get_args()
+    random.seed(args.seed)
 
     # Get config
     with open(args.config) as f:
