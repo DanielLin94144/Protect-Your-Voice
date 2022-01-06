@@ -109,9 +109,9 @@ def wav2mel(audio):
 
 def synthesize(args, model, _stft):
     # hyperparameters
-    learning_rate = 0.001
-    iter = 20
-    eps = 0.005
+    learning_rate = args.learning_rate
+    iter = args.iteration
+    eps = args.epsilon
     wav = preprocess_audio(args.ref_audio)
     src = preprocess_english(args.text, args.lexicon_path).unsqueeze(0)
     src_len = torch.from_numpy(np.array([src.shape[1]])).to(device=device)
@@ -119,8 +119,12 @@ def synthesize(args, model, _stft):
     wav = torch.from_numpy(wav).unsqueeze(0).unsqueeze(0)
     wav = wav.detach()
     # attack
-    delta = Variable(torch.zeros(wav.size()).type(torch.FloatTensor), requires_grad=True)
-    optimizer = torch.optim.SGD(params=[delta], lr=learning_rate, momentum=1)
+    if args.random_start:
+        delta = Variable(torch.empty_like(wav).uniform_(-eps, eps), requires_grad=True)
+    else:
+        delta = Variable(torch.zeros(wav.size()).type(torch.FloatTensor), requires_grad=True)
+    
+    optimizer = torch.optim.Adam(params=[delta], lr=learning_rate)
     ori_mel = wav2mel(wav).transpose(2, 1).to(device=device).detach()
 
     # iterative attack
@@ -192,6 +196,11 @@ if __name__ == "__main__":
     parser.add_argument("--text", type=str, required=True,
         help="raw text to synthesize")
     parser.add_argument("--lexicon_path", type=str, default='lexicon/librispeech-lexicon.txt')
+    parser.add_argument("--random_start", action='store_true')
+    parser.add_argument("--epsilon", type=float, default=0.002)
+    parser.add_argument("--iteration", type=float, default=40)
+    parser.add_argument("--learning_rate", type=float, default=0.0001)
+
     args = parser.parse_args()
 
     with open(args.config) as f:
