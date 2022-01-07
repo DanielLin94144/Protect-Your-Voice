@@ -50,7 +50,7 @@ class EvalAgent():
 
 
 def eval_all(root_dir):
-    ref_dir = '00_ori'
+    ref_dir = '00_gt'
     test_dirs = ['01_ori_with_adv', '02_ori_with_base', '03_synthesized_ori', '04_synthesized_adv', '05_synthesized_base']
 
     agent = EvalAgent(root_dir=root_dir)
