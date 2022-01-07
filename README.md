@@ -13,8 +13,13 @@
 ```
 
 
-* source: stylespeech; target: meta-stylespeech 
+* reverse
 ```bash
+on stylespeech: 
+[ref = 00_gt, test_dir =   03_synthesized_ori] asv = 0.7081 +- 0.0723, mos = 3.3798 += 0.1525
+[ref = 00_gt, test_dir =  05_synthesized_base] asv = 0.6800 +- 0.0765, mos = 3.2477 += 0.1785
+
+source: stylespeech; target: meta-stylespeech 
 ifgsm  [ref = 00_gt, test_dir = 06_synthesized_black] asv = 0.6033 +- 0.0757, mos = 3.2930 += 0.1715
 mifgsm [ref = 00_gt, test_dir = 06_synthesized_black] asv = 0.6153 +- 0.0635, mos = 3.3004 += 0.1725
 pgd    [ref = 00_gt, test_dir = 06_synthesized_black] asv = 0.6098 +- 0.0642, mos = 3.3023 += 0.1696
