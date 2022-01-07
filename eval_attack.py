@@ -110,9 +110,40 @@ def wav2mel(audio):
     return log_mel_spec
 
 
+# class AudioDataset(Dataset):
+#     def __init__(self, data_root='/hdd0/CORPORA/VCTK-Corpus-0.92'):
+#         self.wav_dir = os.path.join(data_root, 'wav48_silence_trimmed')
+#         self.txt_dir = os.path.join(data_root, 'txt')
+
+#         remove_tags = ['p280', 'p362']
+#         self.speaker_list = sorted(os.listdir(self.txt_dir))
+#         self.speaker_list = [e for e in self.speaker_list if e not in remove_tags]
+
+#     def __getitem__(self, idx):
+#         '''
+#         Returns:
+#             tuple: ``(target_audio, target_text, gt_audio)``
+#         '''
+#         speaker = self.speaker_list[idx]
+
+#         idx_list = [e.split('.')[0].split('_')[1] for e in sorted(os.listdir(os.path.join(self.txt_dir, speaker)))]
+#         idx_01, idx_02 = random.sample(idx_list, 2)
+
+#         target_audio = os.path.join(self.wav_dir, speaker, f'{speaker}_{idx_01}_mic2.flac')
+#         gt_audio = os.path.join(self.wav_dir, speaker, f'{speaker}_{idx_02}_mic2.flac')
+
+#         with open(os.path.join(self.txt_dir, speaker, f'{speaker}_{idx_02}.txt')) as f:
+#             target_text = f.read()
+
+#         return target_audio, target_text, gt_audio
+
+#     def __len__(self):
+#         return len(self.speaker_list)
+
+# for battleship
 class AudioDataset(Dataset):
-    def __init__(self, data_root='/hdd0/CORPORA/VCTK-Corpus-0.92'):
-        self.wav_dir = os.path.join(data_root, 'wav48_silence_trimmed')
+    def __init__(self, data_root='VCTK-Corpus'):
+        self.wav_dir = os.path.join(data_root, 'wav48')
         self.txt_dir = os.path.join(data_root, 'txt')
 
         remove_tags = ['p280', 'p362']
@@ -128,9 +159,10 @@ class AudioDataset(Dataset):
 
         idx_list = [e.split('.')[0].split('_')[1] for e in sorted(os.listdir(os.path.join(self.txt_dir, speaker)))]
         idx_01, idx_02 = random.sample(idx_list, 2)
-
-        target_audio = os.path.join(self.wav_dir, speaker, f'{speaker}_{idx_01}_mic2.flac')
-        gt_audio = os.path.join(self.wav_dir, speaker, f'{speaker}_{idx_02}_mic2.flac')
+        # idx_01 is cloned speech (speech only)
+        # idx_02 is ground truth speech (both speech and text)
+        target_audio = os.path.join(self.wav_dir, speaker, f'{speaker}_{idx_01}.wav')
+        gt_audio = os.path.join(self.wav_dir, speaker, f'{speaker}_{idx_02}.wav')
 
         with open(os.path.join(self.txt_dir, speaker, f'{speaker}_{idx_02}.txt')) as f:
             target_text = f.read()
@@ -164,9 +196,9 @@ def write_wav(audio_path, audio_tensor, sr=16000):
 
 def synthesize(args, model, vocoder, _stft, target_audio, target_text):
     # hyperparameters
-    learning_rate = 0.001
-    iter = 20
-    eps = 0.005
+    learning_rate = args.learning_rate
+    iter = args.iteration
+    eps = args.epsilon
 
     wav = preprocess_audio(target_audio)
     src = preprocess_english(target_text, args.lexicon_path).unsqueeze(0)
@@ -176,8 +208,12 @@ def synthesize(args, model, vocoder, _stft, target_audio, target_text):
     wav = wav.detach()
 
     # attack
-    delta = Variable(torch.zeros(wav.size()).type(torch.FloatTensor), requires_grad=True)
-    optimizer = torch.optim.SGD(params=[delta], lr=learning_rate, momentum=1)
+    if args.random_start:
+        delta = Variable(torch.empty_like(wav).uniform_(-eps, eps), requires_grad=True)
+    else:
+        delta = Variable(torch.zeros(wav.size()).type(torch.FloatTensor), requires_grad=True)
+
+    optimizer = torch.optim.SGD(params=[delta], lr=learning_rate, momentum=args.momentum)
     ori_mel = wav2mel(wav).transpose(2, 1).to(device=device).detach()
 
     # iterative attack
@@ -235,7 +271,7 @@ def synthesize(args, model, vocoder, _stft, target_audio, target_text):
 
 
 def synthesize_all(args, model, vocoder, _stft):
-    audio_dataset = AudioDataset()
+    audio_dataset = AudioDataset(args.data_root)
     # audio_dataset = DummyDataset(args)
 
     for batch in tqdm(audio_dataset, desc='Generating audios'):
@@ -255,6 +291,12 @@ def get_args():
     parser.add_argument("--lexicon_path",    type=str, default='lexicon/librispeech-lexicon.txt')
     parser.add_argument("--vocoder_path",    type=str, default='melgan_neurips/pretrained')
     parser.add_argument("--seed",            type=int, default=0)
+    parser.add_argument("--random_start", action='store_true')
+    parser.add_argument("--epsilon", type=float, default=0.002)
+    parser.add_argument("--iteration", type=float, default=40)
+    parser.add_argument("--learning_rate", type=float, default=0.0001)
+    parser.add_argument("--momentum", type=float, default=0.0)
+    parser.add_argument("--data_root", type=str, default='VCTK-Corpus')
 
     args = parser.parse_args()
     return args
