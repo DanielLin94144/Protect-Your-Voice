@@ -251,9 +251,10 @@ def synthesize(args, model, target_model, vocoder, _stft, target_audio, target_t
     else:
         # imp attack
         first_iter = 20
-        second_iter = 300
+        second_iter = 150
         alpha = 0.02
         threshold = 0.2
+        save_flag = True # don't save if loss is nan
 
         optimizer1 = torch.optim.SGD(params=[delta], lr=args.learning_rate1, momentum=args.momentum)
         ori_mel = wav2mel(wav).transpose(2, 1).to(device=device).detach()
@@ -283,6 +284,7 @@ def synthesize(args, model, target_model, vocoder, _stft, target_audio, target_t
             optimizer2.zero_grad()
             if torch.isnan(torch.sum(delta_2)):
                 # delta_2 = _delta # save the last non-nan delta
+                save_flag = False
                 break
             _delta = delta_2.clone().detach()
             # no clamping: only bounded by psd mask
@@ -353,19 +355,20 @@ def synthesize(args, model, target_model, vocoder, _stft, target_audio, target_t
     gt_wav = torch.from_numpy(gt_wav).unsqueeze(0).unsqueeze(0)
     gt_wav = gt_wav.detach()
 
-    write_wav(os.path.join(args.save_dir, '00_gt',              filename), gt_wav.squeeze(0))
-    write_wav(os.path.join(args.save_dir, '01_ori_with_adv',     filename), adv_wav.squeeze(0))
-    write_wav(os.path.join(args.save_dir, '02_ori_with_base',    filename), base_wav.squeeze(0))
-    write_wav(os.path.join(args.save_dir, '03_synthesized_ori',  filename), out_wav_ori)
-    write_wav(os.path.join(args.save_dir, '04_synthesized_adv',  filename), out_wav_adv)
-    write_wav(os.path.join(args.save_dir, '05_synthesized_base', filename), out_wav_base)
+    if save_flag:
+        write_wav(os.path.join(args.save_dir, '00_gt',              filename), gt_wav.squeeze(0))
+        write_wav(os.path.join(args.save_dir, '01_ori_with_adv',     filename), adv_wav.squeeze(0))
+        write_wav(os.path.join(args.save_dir, '02_ori_with_base',    filename), base_wav.squeeze(0))
+        write_wav(os.path.join(args.save_dir, '03_synthesized_ori',  filename), out_wav_ori)
+        write_wav(os.path.join(args.save_dir, '04_synthesized_adv',  filename), out_wav_adv)
+        write_wav(os.path.join(args.save_dir, '05_synthesized_base', filename), out_wav_base)
 
-    # black box 
-    target_style_vector_adv = target_model.get_style_vector(adv_mel)
-    result_mel_target = model.inference(target_style_vector_adv, src, src_len)[0]
-    result_mel_target = result_mel_target.cpu().squeeze().transpose(0, 1).detach()
-    out_wav_target = vocoder.inverse(result_mel_target.unsqueeze(0))
-    write_wav(os.path.join(args.save_dir, '06_synthesized_black',  filename), out_wav_target)
+        # black box 
+        target_style_vector_adv = target_model.get_style_vector(adv_mel)
+        result_mel_target = model.inference(target_style_vector_adv, src, src_len)[0]
+        result_mel_target = result_mel_target.cpu().squeeze().transpose(0, 1).detach()
+        out_wav_target = vocoder.inverse(result_mel_target.unsqueeze(0))
+        write_wav(os.path.join(args.save_dir, '06_synthesized_black',  filename), out_wav_target)
 
 def synthesize_all(args, model, target_model, vocoder, _stft):
     audio_dataset = AudioDataset(args.data_root)

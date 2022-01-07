@@ -1,6 +1,16 @@
 # Meta-StyleSpeech : Multi-Speaker Adaptive Text-to-Speech Generation
 
 ### Eval results (eval on VCTK)
+* source: meta-stylespeech; target: stylespeech (PGD + imperceptible) (only 8 speakers)
+```bash
+[ref = 00_gt, test_dir =      01_ori_with_adv] asv = 0.8850 +- 0.0369, mos = 3.4646 += 0.1158
+[ref = 00_gt, test_dir =     02_ori_with_base] asv = 0.8802 +- 0.0382, mos = 3.4127 += 0.1134
+[ref = 00_gt, test_dir =   03_synthesized_ori] asv = 0.7485 +- 0.0257, mos = 3.4045 += 0.1139
+[ref = 00_gt, test_dir =   04_synthesized_adv] asv = 0.5790 +- 0.0815, mos = 2.8611 += 0.1031
+[ref = 00_gt, test_dir =  05_synthesized_base] asv = 0.7299 +- 0.0502, mos = 3.2586 += 0.1673
+[ref = 00_gt, test_dir = 06_synthesized_black] asv = 0.6373 +- 0.0502, mos = 3.0780 += 0.1531
+```
+
 * source: meta-stylespeech; target: stylespeech (PGD)
 ```bash
 [ref = 00_gt, test_dir =      01_ori_with_adv] asv = 0.8423 +- 0.0681, mos = 3.5113 += 0.0829
