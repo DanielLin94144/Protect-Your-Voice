@@ -12,10 +12,10 @@
 
 * White-box attack on meta-stylespeech (ifgsm)
 ```bash
-[ref = 00_ori, test_dir =      01_ori_with_adv] asv = 0.9971 +- 0.0041, mos = 3.4596 += 0.1543                                                                                                              
-[ref = 00_ori, test_dir =     02_ori_with_base] asv = 0.9945 +- 0.0066, mos = 3.4396 += 0.1458                                                                                                              
-[ref = 00_ori, test_dir =   03_synthesized_ori] asv = 0.6672 +- 0.0955, mos = 3.1903 += 0.2370                                                                                                              
-[ref = 00_ori, test_dir =   04_synthesized_adv] asv = 0.5405 +- 0.1092, mos = 3.0785 += 0.2283                                                                                                              
+[ref = 00_ori, test_dir =      01_ori_with_adv] asv = 0.9971 +- 0.0041, mos = 3.4596 += 0.1543
+[ref = 00_ori, test_dir =     02_ori_with_base] asv = 0.9945 +- 0.0066, mos = 3.4396 += 0.1458
+[ref = 00_ori, test_dir =   03_synthesized_ori] asv = 0.6672 +- 0.0955, mos = 3.1903 += 0.2370
+[ref = 00_ori, test_dir =   04_synthesized_adv] asv = 0.5405 +- 0.1092, mos = 3.0785 += 0.2283
 [ref = 00_ori, test_dir =  05_synthesized_base] asv = 0.6175 +- 0.1089, mos = 3.1156 += 0.2384
 ```
 
