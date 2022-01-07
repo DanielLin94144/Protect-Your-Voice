@@ -10,6 +10,33 @@
 [ref = 00_ori, test_dir =  05_synthesized_base] asv = 0.5653 +- 0.0966, mos = 3.2598 += 0.1947
 ```
 
+* White-box attack on meta-stylespeech (ifgsm)
+```bash
+[ref = 00_ori, test_dir =      01_ori_with_adv] asv = 0.9971 +- 0.0041, mos = 3.4596 += 0.1543                                                                                                              
+[ref = 00_ori, test_dir =     02_ori_with_base] asv = 0.9945 +- 0.0066, mos = 3.4396 += 0.1458                                                                                                              
+[ref = 00_ori, test_dir =   03_synthesized_ori] asv = 0.6672 +- 0.0955, mos = 3.1903 += 0.2370                                                                                                              
+[ref = 00_ori, test_dir =   04_synthesized_adv] asv = 0.5405 +- 0.1092, mos = 3.0785 += 0.2283                                                                                                              
+[ref = 00_ori, test_dir =  05_synthesized_base] asv = 0.6175 +- 0.1089, mos = 3.1156 += 0.2384
+```
+
+* While-box attack on meta-stylespeech (mifgsm)
+```bash
+[ref = 00_ori, test_dir =      01_ori_with_adv] asv = 0.9809 +- 0.0173, mos = 3.4747 += 0.1409
+[ref = 00_ori, test_dir =     02_ori_with_base] asv = 0.9945 +- 0.0066, mos = 3.4416 += 0.1455
+[ref = 00_ori, test_dir =   03_synthesized_ori] asv = 0.6672 +- 0.0955, mos = 3.1903 += 0.2370
+[ref = 00_ori, test_dir =   04_synthesized_adv] asv = 0.5481 +- 0.0893, mos = 3.1670 += 0.1932
+[ref = 00_ori, test_dir =  05_synthesized_base] asv = 0.6143 +- 0.1111, mos = 3.1196 += 0.2320
+```
+
+* While-box attack on meta-stylespeech (pgd)
+```bash
+[ref = 00_ori, test_dir =      01_ori_with_adv] asv = 0.9919 +- 0.0092, mos = 3.5105 += 0.1526
+[ref = 00_ori, test_dir =     02_ori_with_base] asv = 0.9945 +- 0.0065, mos = 3.4380 += 0.1404
+[ref = 00_ori, test_dir =   03_synthesized_ori] asv = 0.6672 +- 0.0955, mos = 3.1903 += 0.2370
+[ref = 00_ori, test_dir =   04_synthesized_adv] asv = 0.5184 +- 0.0970, mos = 3.0843 += 0.1900
+[ref = 00_ori, test_dir =  05_synthesized_base] asv = 0.6164 +- 0.1100, mos = 3.1112 += 0.2437
+```
+
 ### Dongchan Min, Dong Bok Lee, Eunho Yang, and Sung Ju Hwang
 
 This is an official code for our recent [paper](https://arxiv.org/abs/2106.03153).
