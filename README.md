@@ -1,5 +1,6 @@
 # Meta-StyleSpeech : Multi-Speaker Adaptive Text-to-Speech Generation
 
+
 ### Eval results (eval on VCTK)
 * source: meta-stylespeech; target: stylespeech (PGD + imperceptible) (only 8 speakers)
 ```bash
@@ -11,6 +12,14 @@
 [ref = 00_gt, test_dir = 06_synthesized_black] asv = 0.6373 +- 0.0502, mos = 3.0780 += 0.1531
 ```
 
+
+* source: stylespeech; target: meta-stylespeech 
+```bash
+ifgsm  [ref = 00_gt, test_dir = 06_synthesized_black] asv = 0.6033 +- 0.0757, mos = 3.2930 += 0.1715
+mifgsm [ref = 00_gt, test_dir = 06_synthesized_black] asv = 0.6153 +- 0.0635, mos = 3.3004 += 0.1725
+pgd    [ref = 00_gt, test_dir = 06_synthesized_black] asv = 0.6098 +- 0.0642, mos = 3.3023 += 0.1696
+```
+-----------------------------------------------
 * source: meta-stylespeech; target: stylespeech (PGD)
 ```bash
 [ref = 00_gt, test_dir =      01_ori_with_adv] asv = 0.8423 +- 0.0681, mos = 3.5113 += 0.0829
@@ -20,6 +29,25 @@
 [ref = 00_gt, test_dir =  05_synthesized_base] asv = 0.6624 +- 0.1075, mos = 3.2340 += 0.2166
 [ref = 00_gt, test_dir = 06_synthesized_black] asv = 0.5692 +- 0.0978, mos = 3.1085 += 0.1692
 ```
+* source: meta-stylespeech; target: stylespeech (mifgsm)
+```bash
+[ref = 00_gt, test_dir =      01_ori_with_adv] asv = 0.8390 +- 0.0692, mos = 3.4886 += 0.0883
+[ref = 00_gt, test_dir =     02_ori_with_base] asv = 0.8511 +- 0.0655, mos = 3.4609 += 0.0946
+[ref = 00_gt, test_dir =   03_synthesized_ori] asv = 0.7087 +- 0.0815, mos = 3.3328 += 0.1824
+[ref = 00_gt, test_dir =   04_synthesized_adv] asv = 0.5921 +- 0.0994, mos = 3.2047 += 0.2021
+[ref = 00_gt, test_dir =  05_synthesized_base] asv = 0.6627 +- 0.1047, mos = 3.2310 += 0.2258
+[ref = 00_gt, test_dir = 06_synthesized_black] asv = 0.5807 +- 0.1002, mos = 3.1346 += 0.1800
+```
+* source: meta-stylespeech; target: stylespeech (ifgsm)
+```bash
+[ref = 00_gt, test_dir =      01_ori_with_adv] asv = 0.8431 +- 0.0674, mos = 3.5015 += 0.0957
+[ref = 00_gt, test_dir =     02_ori_with_base] asv = 0.8511 +- 0.0656, mos = 3.4587 += 0.1007
+[ref = 00_gt, test_dir =   03_synthesized_ori] asv = 0.7087 +- 0.0815, mos = 3.3328 += 0.1824
+[ref = 00_gt, test_dir =   04_synthesized_adv] asv = 0.5576 +- 0.0996, mos = 3.1476 += 0.2041
+[ref = 00_gt, test_dir =  05_synthesized_base] asv = 0.6607 +- 0.1080, mos = 3.2257 += 0.2276
+[ref = 00_gt, test_dir = 06_synthesized_black] asv = 0.5610 +- 0.0904, mos = 3.0969 += 0.1984
+```
+-----------------------------------------------
 
 
 * White-box attack on meta-stylespeech (ifgsm)
