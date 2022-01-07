@@ -157,7 +157,7 @@ class AudioDataset(Dataset):
         self.wav_dir = os.path.join(data_root, 'wav48')
         self.txt_dir = os.path.join(data_root, 'txt')
 
-        remove_tags = ['p280', 'p362']
+        remove_tags = ['p280'] + [f'p{i}' for i in range(300, 376 + 1)]
         self.speaker_list = sorted(os.listdir(self.txt_dir))
         self.speaker_list = [e for e in self.speaker_list if e not in remove_tags]
         self.num_sent = 3
@@ -297,10 +297,10 @@ def synthesize(args, model, vocoder, _stft, target_audio, target_text, gt_audio)
             elif i % 3 and attack_loss > 0.2:
                 alpha = alpha * 0.8
 
-            print(attack_loss)
-            print(imperceptible_loss)
+            # print(attack_loss)
+            # print(imperceptible_loss)
             loss = attack_loss + alpha * imperceptible_loss
-            print('[INFO]  loss = ', loss.item())
+            # print('[INFO]  loss = ', loss.item())
 
             loss.backward(retain_graph=True)
             # clip grad
