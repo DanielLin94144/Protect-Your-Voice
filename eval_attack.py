@@ -212,7 +212,7 @@ def write_wav(audio_path, audio_tensor, sr=16000):
     sf.write(audio_path, audio_tensor.transpose(0, 1).cpu().numpy(), sr)
 
 
-def synthesize(args, model, vocoder, _stft, target_audio, target_text, gt_audio):
+def synthesize(args, model, target_model, vocoder, _stft, target_audio, target_text, gt_audio):
     # hyperparameters
     learning_rate = args.learning_rate
     iter = args.iteration
@@ -360,8 +360,14 @@ def synthesize(args, model, vocoder, _stft, target_audio, target_text, gt_audio)
     write_wav(os.path.join(args.save_dir, '04_synthesized_adv',  filename), out_wav_adv)
     write_wav(os.path.join(args.save_dir, '05_synthesized_base', filename), out_wav_base)
 
+    # black box 
+    target_style_vector_adv = target_model.get_style_vector(adv_mel)
+    result_mel_target = model.inference(target_style_vector_adv, src, src_len)[0]
+    result_mel_target = result_mel_target.cpu().squeeze().transpose(0, 1).detach()
+    out_wav_target = vocoder.inverse(result_mel_target.unsqueeze(0))
+    write_wav(os.path.join(args.save_dir, '06_synthesized_black',  filename), out_wav_target)
 
-def synthesize_all(args, model, vocoder, _stft):
+def synthesize_all(args, model, target_model, vocoder, _stft):
     audio_dataset = AudioDataset(args.data_root)
     # audio_dataset = DummyDataset(args)
 
@@ -370,13 +376,14 @@ def synthesize_all(args, model, vocoder, _stft):
         target_text = batch[1]
         gt_audio = batch[2]
 
-        synthesize(args, model, vocoder, _stft, target_audio, target_text, gt_audio)
+        synthesize(args, model, target_model, vocoder, _stft, target_audio, target_text, gt_audio)
 
 
 def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--checkpoint_path", type=str, required=True, help="Path to the pretrained model")
+    parser.add_argument("--blackbox_target_path", type=str, required=False, help="Path to the pretrained model")
     parser.add_argument('--config',          type=str, default='configs/config.json')
     parser.add_argument("--save_dir",        type=str, default='results/')
 
@@ -409,6 +416,10 @@ def main():
 
     # Get model
     model = get_StyleSpeech(config, args.checkpoint_path)
+    target_model = None
+    if args.blackbox_target_path is not None: 
+        target_model = get_StyleSpeech(config, args.blackbox_target_path)
+
     vocoder = MelVocoder(path=args.vocoder_path)
 
     _stft = Audio.stft.TacotronSTFT(
@@ -422,7 +433,7 @@ def main():
     )
 
     # Synthesize
-    synthesize_all(args, model, vocoder, _stft)
+    synthesize_all(args, model, target_model, vocoder, _stft)
 
 
 if __name__ == "__main__":
