@@ -1,6 +1,15 @@
 # Meta-StyleSpeech : Multi-Speaker Adaptive Text-to-Speech Generation
 
+
 ### Eval results (eval on VCTK)
+
+* source: stylespeech; target: meta-stylespeech 
+```bash
+ifgsm  [ref = 00_gt, test_dir = 06_synthesized_black] asv = 0.6033 +- 0.0757, mos = 3.2930 += 0.1715
+mifgsm [ref = 00_gt, test_dir = 06_synthesized_black] asv = 0.6153 +- 0.0635, mos = 3.3004 += 0.1725
+pgd    [ref = 00_gt, test_dir = 06_synthesized_black] asv = 0.6098 +- 0.0642, mos = 3.3023 += 0.1696
+```
+-----------------------------------------------
 * source: meta-stylespeech; target: stylespeech (PGD)
 ```bash
 [ref = 00_gt, test_dir =      01_ori_with_adv] asv = 0.8423 +- 0.0681, mos = 3.5113 += 0.0829
