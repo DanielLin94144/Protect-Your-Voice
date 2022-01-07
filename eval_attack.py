@@ -70,6 +70,16 @@ def preprocess_audio(audio_file):
         wav = librosa.resample(wav, sample_rate, 16000)
     return wav
 
+def preprocess_audio_list(audio_list):
+    wavs = []
+    for file in audio_list:
+        wav, sample_rate = librosa.load(file, sr=None)
+        if sample_rate != 16000:
+            wav = librosa.resample(wav, sample_rate, 16000)
+        wavs.append(wav)
+    wavs = np.concatenate(wavs)
+    return wavs
+
 
 def get_StyleSpeech(config, checkpoint_path):
     model = StyleSpeech(config).to(device=device)
@@ -149,6 +159,7 @@ class AudioDataset(Dataset):
         remove_tags = ['p280', 'p362']
         self.speaker_list = sorted(os.listdir(self.txt_dir))
         self.speaker_list = [e for e in self.speaker_list if e not in remove_tags]
+        self.num_sent = 3
 
     def __getitem__(self, idx):
         '''
@@ -158,10 +169,16 @@ class AudioDataset(Dataset):
         speaker = self.speaker_list[idx]
 
         idx_list = [e.split('.')[0].split('_')[1] for e in sorted(os.listdir(os.path.join(self.txt_dir, speaker)))]
-        idx_01, idx_02 = random.sample(idx_list, 2)
+        # idx_01, idx_02 = random.sample(idx_list, 2)
+        samples = random.sample(idx_list, self.num_sent)
+        duration = sum([librosa.get_duration(filename=os.path.join(self.wav_dir, speaker, f'{speaker}_{idx}.wav')) for idx in samples])
+        idx_02 = random.sample(idx_list, 1)[0]
+        while duration < 10:
+            samples = random.sample(idx_list, self.num_sent)
+            duration = sum([librosa.get_duration(filename=os.path.join(self.wav_dir, speaker, f'{speaker}_{idx}.wav')) for idx in samples])
         # idx_01 is cloned speech (speech only)
         # idx_02 is ground truth speech (both speech and text)
-        target_audio = os.path.join(self.wav_dir, speaker, f'{speaker}_{idx_01}.wav')
+        target_audio = [ os.path.join(self.wav_dir, speaker, f'{speaker}_{idx}.wav') for idx in samples ]
         gt_audio = os.path.join(self.wav_dir, speaker, f'{speaker}_{idx_02}.wav')
 
         with open(os.path.join(self.txt_dir, speaker, f'{speaker}_{idx_02}.txt')) as f:
@@ -194,13 +211,13 @@ def write_wav(audio_path, audio_tensor, sr=16000):
     sf.write(audio_path, audio_tensor.transpose(0, 1).cpu().numpy(), sr)
 
 
-def synthesize(args, model, vocoder, _stft, target_audio, target_text):
+def synthesize(args, model, vocoder, _stft, target_audio, target_text, gt_audio):
     # hyperparameters
     learning_rate = args.learning_rate
     iter = args.iteration
     eps = args.epsilon
 
-    wav = preprocess_audio(target_audio)
+    wav = preprocess_audio_list(target_audio)
     src = preprocess_english(target_text, args.lexicon_path).unsqueeze(0)
     src_len = torch.from_numpy(np.array([src.shape[1]])).to(device=device)
 
@@ -260,9 +277,13 @@ def synthesize(args, model, vocoder, _stft, target_audio, target_text):
     out_wav_base = vocoder.inverse(result_mel_base.unsqueeze(0))
 
     # save file
-    filename = os.path.basename(target_audio)
+    # filename = os.path.basename(target_audio)
+    filename = os.path.basename(gt_audio)
+    gt_wav = preprocess_audio(gt_audio)
+    gt_wav = torch.from_numpy(gt_wav).unsqueeze(0).unsqueeze(0)
+    gt_wav = gt_wav.detach()
 
-    write_wav(os.path.join(args.save_dir, '00_ori',              filename), wav.squeeze(0))
+    write_wav(os.path.join(args.save_dir, '00_gt',              filename), gt_wav.squeeze(0))
     write_wav(os.path.join(args.save_dir, '01_ori_with_adv',     filename), adv_wav.squeeze(0))
     write_wav(os.path.join(args.save_dir, '02_ori_with_base',    filename), base_wav.squeeze(0))
     write_wav(os.path.join(args.save_dir, '03_synthesized_ori',  filename), out_wav_ori)
@@ -277,8 +298,9 @@ def synthesize_all(args, model, vocoder, _stft):
     for batch in tqdm(audio_dataset, desc='Generating audios'):
         target_audio = batch[0]
         target_text = batch[1]
+        gt_audio = batch[2]
 
-        synthesize(args, model, vocoder, _stft, target_audio, target_text)
+        synthesize(args, model, vocoder, _stft, target_audio, target_text, gt_audio)
 
 
 def get_args():
