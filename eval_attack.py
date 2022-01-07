@@ -22,7 +22,8 @@ import torch.nn.functional as F
 from librosa.filters import mel as librosa_mel_fn
 from tqdm import trange, tqdm
 
-from attack_utils import attack_emb
+from torch.nn.utils import clip_grad_value_, clip_grad_norm_
+from attack_utils import attack_emb, imperceptible_attack
 from melgan_neurips.mel2wav.interface import MelVocoder
 
 
@@ -233,19 +234,82 @@ def synthesize(args, model, vocoder, _stft, target_audio, target_text, gt_audio)
     optimizer = torch.optim.SGD(params=[delta], lr=learning_rate, momentum=args.momentum)
     ori_mel = wav2mel(wav).transpose(2, 1).to(device=device).detach()
 
-    # iterative attack
-    for _ in range(iter):
-        optimizer.zero_grad()
-        _delta = torch.clamp(delta, -eps, eps)
-        adv_wav = wav + _delta
-        adv_mel = wav2mel(adv_wav)
+    if not args.imp_loss:
+        # iterative attack
+        for _ in range(iter):
+            optimizer.zero_grad()
+            _delta = torch.clamp(delta, -eps, eps)
+            adv_wav = wav + _delta
+            adv_mel = wav2mel(adv_wav)
 
-        adv_mel = adv_mel.to(device=device).transpose(2, 1)
-        loss = attack_emb(model, ori_mel, adv_mel)
-        loss.backward(retain_graph=True)
-        delta.grad = torch.sign(delta.grad)
+            adv_mel = adv_mel.to(device=device).transpose(2, 1)
+            loss = attack_emb(model, ori_mel, adv_mel)
+            loss.backward(retain_graph=True)
+            delta.grad = torch.sign(delta.grad)
 
-        optimizer.step()
+            optimizer.step()
+    else:
+        # imp attack
+        first_iter = 20
+        second_iter = 300
+        alpha = 0.02
+        threshold = 0.2
+
+        optimizer1 = torch.optim.SGD(params=[delta], lr=args.learning_rate1, momentum=args.momentum)
+        ori_mel = wav2mel(wav).transpose(2, 1).to(device=device).detach()
+        imp_attack = imperceptible_attack()
+        # 1st stage
+        for _ in trange(first_iter):
+            optimizer1.zero_grad()
+            _delta = torch.clamp(delta, -eps, eps)
+            adv_wav = wav + _delta
+            adv_mel = wav2mel(adv_wav)
+
+            adv_mel = adv_mel.to(device=device).transpose(2, 1)
+            attack_loss = attack_emb(model, ori_mel, adv_mel)
+            loss = attack_loss
+            print('[INFO]  loss = ', loss.item())
+            loss.backward(retain_graph=True)
+            delta.grad = torch.sign(delta.grad)
+
+            optimizer1.step()
+
+
+        # 2nd stage
+        delta_2 = Variable(delta, requires_grad=True)
+
+        optimizer2 = torch.optim.Adam(params=[delta_2], lr=args.learning_rate2)
+        for i in trange(second_iter):
+            optimizer2.zero_grad()
+            if torch.isnan(torch.sum(delta_2)):
+                # delta_2 = _delta # save the last non-nan delta
+                break
+            _delta = delta_2.clone().detach()
+            # no clamping: only bounded by psd mask
+            adv_wav = wav + delta_2
+            adv_mel = wav2mel(adv_wav)
+
+            adv_mel = adv_mel.to(device=device).transpose(2, 1)
+            attack_loss = attack_emb(model, ori_mel, adv_mel)
+            imperceptible_loss = imp_attack.imperceptible_loss(delta_2, wav.squeeze(0).squeeze(0).cpu().numpy())
+            if i % 2 and attack_loss < 0.2:
+                alpha = alpha * 1.2
+            elif i % 3 and attack_loss > 0.2:
+                alpha = alpha * 0.8
+
+            print(attack_loss)
+            print(imperceptible_loss)
+            loss = attack_loss + alpha * imperceptible_loss
+            print('[INFO]  loss = ', loss.item())
+
+            loss.backward(retain_graph=True)
+            # clip grad
+            clip_value = 1.0
+            # clip_grad_value_(delta_2, clip_value)
+            clip_grad_norm_(delta_2, clip_value)
+
+            optimizer2.step()
+
 
     # baseline: random noise
     base_wav = wav + eps * torch.normal(0, 1, size=delta.size()).tanh()
@@ -253,10 +317,16 @@ def synthesize(args, model, vocoder, _stft, target_audio, target_text, gt_audio)
     base_mel = base_mel.to(device=device).transpose(2, 1)
 
     # use final delta perturbation to create adv wav
-    delta = torch.clamp(delta, -eps, eps)
-    adv_wav = wav + delta.detach()
-    adv_mel = wav2mel(adv_wav)
-    adv_mel = adv_mel.to(device=device).transpose(2, 1)
+    if not args.imp_loss:
+        delta = torch.clamp(delta, -eps, eps)
+        adv_wav = wav + delta.detach()
+        adv_mel = wav2mel(adv_wav)
+        adv_mel = adv_mel.to(device=device).transpose(2, 1)
+    else:
+        adv_wav = wav + _delta.detach()
+        adv_mel = wav2mel(adv_wav)
+        adv_mel = adv_mel.to(device=device).transpose(2, 1)
+
 
     # extact style vector
     style_vector_base = model.get_style_vector(base_mel)
@@ -313,10 +383,13 @@ def get_args():
     parser.add_argument("--lexicon_path",    type=str, default='lexicon/librispeech-lexicon.txt')
     parser.add_argument("--vocoder_path",    type=str, default='melgan_neurips/pretrained')
     parser.add_argument("--seed",            type=int, default=0)
+    parser.add_argument("--imp_loss", action='store_true')
     parser.add_argument("--random_start", action='store_true')
     parser.add_argument("--epsilon", type=float, default=0.002)
     parser.add_argument("--iteration", type=float, default=40)
     parser.add_argument("--learning_rate", type=float, default=0.0001)
+    parser.add_argument("--learning_rate1", type=float, default=0.001)
+    parser.add_argument("--learning_rate2", type=float, default=5e-4)
     parser.add_argument("--momentum", type=float, default=0.0)
     parser.add_argument("--data_root", type=str, default='VCTK-Corpus')
 
