@@ -1,40 +1,32 @@
 # Meta-StyleSpeech : Multi-Speaker Adaptive Text-to-Speech Generation
 
 ### Eval results (eval on VCTK)
-* White-box attack on meta-stylespeech
-```bash
-[ref = 00_ori, test_dir =      01_ori_with_adv] asv = 0.8208 +- 0.0915, mos = 3.4099 += 0.1257
-[ref = 00_ori, test_dir =     02_ori_with_base] asv = 0.9056 +- 0.0710, mos = 3.4471 += 0.1294
-[ref = 00_ori, test_dir =   03_synthesized_ori] asv = 0.6768 +- 0.0751, mos = 3.2561 += 0.2237
-[ref = 00_ori, test_dir =   04_synthesized_adv] asv = 0.4875 +- 0.0718, mos = 3.2090 += 0.1840
-[ref = 00_ori, test_dir =  05_synthesized_base] asv = 0.5653 +- 0.0966, mos = 3.2598 += 0.1947
-```
 
 * White-box attack on meta-stylespeech (ifgsm)
 ```bash
-[ref = 00_ori, test_dir =      01_ori_with_adv] asv = 0.9971 +- 0.0041, mos = 3.4596 += 0.1543
-[ref = 00_ori, test_dir =     02_ori_with_base] asv = 0.9945 +- 0.0066, mos = 3.4396 += 0.1458
-[ref = 00_ori, test_dir =   03_synthesized_ori] asv = 0.6672 +- 0.0955, mos = 3.1903 += 0.2370
-[ref = 00_ori, test_dir =   04_synthesized_adv] asv = 0.5405 +- 0.1092, mos = 3.0785 += 0.2283
-[ref = 00_ori, test_dir =  05_synthesized_base] asv = 0.6175 +- 0.1089, mos = 3.1156 += 0.2384
+[ref = 00_gt, test_dir =      01_ori_with_adv] asv = 0.8544 +- 0.0620, mos = 3.4652 += 0.1338                                                                                                               
+[ref = 00_gt, test_dir =     02_ori_with_base] asv = 0.8511 +- 0.0658, mos = 3.4470 += 0.1270                                                                                                               
+[ref = 00_gt, test_dir =   03_synthesized_ori] asv = 0.7087 +- 0.0815, mos = 3.2460 += 0.2281                                                                                                               
+[ref = 00_gt, test_dir =   04_synthesized_adv] asv = 0.5709 +- 0.0979, mos = 3.0750 += 0.2342                                                                                                               
+[ref = 00_gt, test_dir =  05_synthesized_base] asv = 0.6633 +- 0.1076, mos = 3.1587 += 0.2395                                                                                                               
 ```
 
 * While-box attack on meta-stylespeech (mifgsm)
 ```bash
-[ref = 00_ori, test_dir =      01_ori_with_adv] asv = 0.9809 +- 0.0173, mos = 3.4747 += 0.1409
-[ref = 00_ori, test_dir =     02_ori_with_base] asv = 0.9945 +- 0.0066, mos = 3.4416 += 0.1455
-[ref = 00_ori, test_dir =   03_synthesized_ori] asv = 0.6672 +- 0.0955, mos = 3.1903 += 0.2370
-[ref = 00_ori, test_dir =   04_synthesized_adv] asv = 0.5481 +- 0.0893, mos = 3.1670 += 0.1932
-[ref = 00_ori, test_dir =  05_synthesized_base] asv = 0.6143 +- 0.1111, mos = 3.1196 += 0.2320
+[ref = 00_gt, test_dir =      01_ori_with_adv] asv = 0.8419 +- 0.0682, mos = 3.4853 += 0.1234
+[ref = 00_gt, test_dir =     02_ori_with_base] asv = 0.8511 +- 0.0656, mos = 3.4485 += 0.1279
+[ref = 00_gt, test_dir =   03_synthesized_ori] asv = 0.7087 +- 0.0815, mos = 3.2460 += 0.2281
+[ref = 00_gt, test_dir =   04_synthesized_adv] asv = 0.5800 +- 0.0929, mos = 3.1694 += 0.1922
+[ref = 00_gt, test_dir =  05_synthesized_base] asv = 0.6632 +- 0.1067, mos = 3.1625 += 0.2361
 ```
 
 * While-box attack on meta-stylespeech (pgd)
 ```bash
-[ref = 00_ori, test_dir =      01_ori_with_adv] asv = 0.9919 +- 0.0092, mos = 3.5105 += 0.1526
-[ref = 00_ori, test_dir =     02_ori_with_base] asv = 0.9945 +- 0.0065, mos = 3.4380 += 0.1404
-[ref = 00_ori, test_dir =   03_synthesized_ori] asv = 0.6672 +- 0.0955, mos = 3.1903 += 0.2370
-[ref = 00_ori, test_dir =   04_synthesized_adv] asv = 0.5184 +- 0.0970, mos = 3.0843 += 0.1900
-[ref = 00_ori, test_dir =  05_synthesized_base] asv = 0.6164 +- 0.1100, mos = 3.1112 += 0.2437
+[ref = 00_gt, test_dir =      01_ori_with_adv] asv = 0.8497 +- 0.0647, mos = 3.5156 += 0.1316
+[ref = 00_gt, test_dir =     02_ori_with_base] asv = 0.8511 +- 0.0655, mos = 3.4460 += 0.1237
+[ref = 00_gt, test_dir =   03_synthesized_ori] asv = 0.7087 +- 0.0815, mos = 3.2460 += 0.2281
+[ref = 00_gt, test_dir =   04_synthesized_adv] asv = 0.5527 +- 0.0996, mos = 3.0957 += 0.1932
+[ref = 00_gt, test_dir =  05_synthesized_base] asv = 0.6647 +- 0.1070, mos = 3.1602 += 0.2412
 ```
 
 ### Dongchan Min, Dong Bok Lee, Eunho Yang, and Sung Ju Hwang
