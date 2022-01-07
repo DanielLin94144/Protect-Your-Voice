@@ -1,6 +1,16 @@
 # Meta-StyleSpeech : Multi-Speaker Adaptive Text-to-Speech Generation
 
 ### Eval results (eval on VCTK)
+* source: meta-stylespeech; target: stylespeech (PGD)
+```bash
+[ref = 00_gt, test_dir =      01_ori_with_adv] asv = 0.8423 +- 0.0681, mos = 3.5113 += 0.0829
+[ref = 00_gt, test_dir =     02_ori_with_base] asv = 0.8511 +- 0.0657, mos = 3.4609 += 0.0967
+[ref = 00_gt, test_dir =   03_synthesized_ori] asv = 0.7087 +- 0.0815, mos = 3.3328 += 0.1824
+[ref = 00_gt, test_dir =   04_synthesized_adv] asv = 0.5622 +- 0.1028, mos = 3.1224 += 0.1918
+[ref = 00_gt, test_dir =  05_synthesized_base] asv = 0.6624 +- 0.1075, mos = 3.2340 += 0.2166
+[ref = 00_gt, test_dir = 06_synthesized_black] asv = 0.5692 +- 0.0978, mos = 3.1085 += 0.1692
+```
+
 * White-box attack on meta-stylespeech
 ```bash
 [ref = 00_ori, test_dir =      01_ori_with_adv] asv = 0.8208 +- 0.0915, mos = 3.4099 += 0.1257
