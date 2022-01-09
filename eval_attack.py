@@ -224,7 +224,8 @@ def synthesize(args, model, target_model, vocoder, _stft, target_audio, target_t
 
     wav = torch.from_numpy(wav).unsqueeze(0).unsqueeze(0)
     wav = wav.detach()
-
+    save_flag = True # don't save if loss is nan
+    
     # attack
     if args.random_start:
         delta = Variable(torch.empty_like(wav).uniform_(-eps, eps), requires_grad=True)
@@ -254,7 +255,6 @@ def synthesize(args, model, target_model, vocoder, _stft, target_audio, target_t
         second_iter = 150
         alpha = 0.02
         threshold = 0.2
-        save_flag = True # don't save if loss is nan
 
         optimizer1 = torch.optim.SGD(params=[delta], lr=args.learning_rate1, momentum=args.momentum)
         ori_mel = wav2mel(wav).transpose(2, 1).to(device=device).detach()
