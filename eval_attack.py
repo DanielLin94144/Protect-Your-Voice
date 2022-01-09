@@ -237,6 +237,7 @@ def synthesize(args, model, target_model, vocoder, _stft, target_audio, target_t
 
     if not args.imp_loss:
         # iterative attack
+        save_flag = True # always save with normal attack
         for _ in range(iter):
             optimizer.zero_grad()
             _delta = torch.clamp(delta, -eps, eps)
@@ -363,7 +364,7 @@ def synthesize(args, model, target_model, vocoder, _stft, target_audio, target_t
         write_wav(os.path.join(args.save_dir, '04_synthesized_adv',  filename), out_wav_adv)
         write_wav(os.path.join(args.save_dir, '05_synthesized_base', filename), out_wav_base)
 
-        # black box 
+        # black box
         target_style_vector_adv = target_model.get_style_vector(adv_mel)
         result_mel_target = model.inference(target_style_vector_adv, src, src_len)[0]
         result_mel_target = result_mel_target.cpu().squeeze().transpose(0, 1).detach()
@@ -420,7 +421,7 @@ def main():
     # Get model
     model = get_StyleSpeech(config, args.checkpoint_path)
     target_model = None
-    if args.blackbox_target_path is not None: 
+    if args.blackbox_target_path is not None:
         target_model = get_StyleSpeech(config, args.blackbox_target_path)
 
     vocoder = MelVocoder(path=args.vocoder_path)
